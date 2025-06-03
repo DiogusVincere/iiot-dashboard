@@ -1,0 +1,461 @@
+type: collection.insomnia.rest/5.0
+name: Scratch Pad
+meta:
+  id: wrk_scratchpad
+  created: 1747696680237
+  modified: 1747696680237
+collection:
+  - name: CMS
+    meta:
+      id: fld_017c80dd869a479d8bcc233a55fd052d
+      created: 1743723949410
+      modified: 1743723949410
+      sortKey: -1743723949410
+    children:
+      - url: https://api.contentful.com/spaces/tqsnwogyan0s/environments/master/entries
+        name: POST DEVICE
+        meta:
+          id: req_fc3c7e10496643a28760242264ad223a
+          created: 1743719752642
+          modified: 1748907442963
+          isPrivate: false
+          sortKey: -1743121521966.5
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "fields": {
+                "name": {
+                  "en-US": "Sensor de Temperatura"
+                },
+                "icon": {
+                  "en-US": "thermometer"
+                },
+                "state": {
+                  "en-US": true
+                },
+                "pin": {
+                  "en-US": 12
+                }
+              }
+            }
+        headers:
+          - name: Content-Type
+            value: application/vnd.contentful.management.v1+json
+            id: pair_04c0ffde1bf9492eaf3a516b71022da1
+          - name: User-Agent
+            value: insomnia/11.0.0
+            id: pair_fd2fdd5742044452a1ed77ddac147502
+          - name: Authorization
+            value: Bearer ***REMOVIDO***
+            id: pair_8ba0ecf1cc2f4411a1e7b714aae146b6
+          - name: X-Contentful-Content-Type
+            value: device
+            id: pair_b459ac015dbe4422ae2ee2951e6bedc4
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://cdn.contentful.com/spaces/tqsnwogyan0s/environments/master/content_types/device
+        name: GET DEVICES
+        meta:
+          id: req_df3f46a185a1447c8d33116463f5dbc0
+          created: 1743723952332
+          modified: 1748906644664
+          isPrivate: false
+          sortKey: -1743723952332
+        method: GET
+        parameters:
+          - name: content_type
+            value: device
+            disabled: false
+            id: pair_09d041682c684524bc795f061c71d467
+          - name: select
+            value: fields.pin,fields.state
+            disabled: false
+            id: pair_64311efad04d41dbb383d82d83b7bcc2
+        headers:
+          - name: User-Agent
+            value: insomnia/11.0.1
+            id: pair_cc351aafe2ef459d8fff64e3f06f40c7
+          - name: Authorization
+            value: Bearer ***REMOVIDO***
+            id: pair_cfd3981d69ce45feabb2bebff16bf564
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://cdn.contentful.com/spaces/tqsnwogyan0s/environments/master/entries
+        name: GET ENVIRONMENTS
+        meta:
+          id: req_c83a75a78e424cd0816d3d02dbfe12d4
+          created: 1743724428607
+          modified: 1747702619060
+          isPrivate: false
+          sortKey: -1743121522066.5
+        method: GET
+        parameters:
+          - name: content_type
+            value: environment
+            disabled: false
+            id: pair_09d041682c684524bc795f061c71d467
+        headers:
+          - name: User-Agent
+            value: insomnia/11.0.1
+            id: pair_e99f0d9d1dd24bb49b47f6c348ffd874
+          - name: Authorization
+            value: Bearer ***REMOVIDO***
+            id: pair_f294db8bd7464d47ab8de93946875967
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://api.contentful.com/spaces/tqsnwogyan0s/environments/master/entries/4gmlGzXHb3cWfoaO73xlxR/published
+        name: PUT PUBLISH
+        meta:
+          id: req_58ce06852cd94aeca54681e667002ba9
+          created: 1743728544773
+          modified: 1747702718184
+          isPrivate: false
+          sortKey: -1742820306883.75
+        method: PUT
+        headers:
+          - name: User-Agent
+            value: insomnia/11.0.0
+            id: pair_86e16eee69d24f9aa656e6d9f1070586
+          - name: Authorization
+            value: Bearer ***REMOVIDO***
+            id: pair_e627fc8fab9a4cb992ef1fb8b20a00a6
+          - name: X-Contentful-Version
+            value: "1"
+            id: pair_f8133ae4b1994fe38747ba513cdf2d27
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://api.contentful.com/spaces/tqsnwogyan0s/environments/master/entries
+        name: POST ENVIRONMENT
+        meta:
+          id: req_f28015bace6c4695a39ea5362d0700cc
+          created: 1745541945434
+          modified: 1747702737504
+          isPrivate: false
+          sortKey: -1742970914425.125
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            		"fields": {
+                "name": {
+                  "pt": "teste"
+                }    
+              }
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+            id: pair_58c9b441932a416299ac211b9720c83a
+          - name: User-Agent
+            value: insomnia/11.0.0
+            id: pair_ee2b7f1c7c83449b8109a7b796358d1a
+          - name: Authorization
+            value: Bearer ***REMOVIDO***
+            id: pair_acfbc186e058417687556574a363495f
+          - name: X-Contentful-Content-Type
+            value: environment
+            id: pair_62a2cf1759464aea97be3db217cf6759
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://api.contentful.com/spaces/tqsnwogyan0s/environments/master/entries
+        name: POST MANUTENÇÃO
+        meta:
+          id: req_ca5a34e942c44d15985a0fcbba8034ea
+          created: 1748907729541
+          modified: 1748908274521
+          isPrivate: false
+          sortKey: -1743046218195.8125
+        method: POST
+        body:
+          mimeType: application/json
+          text: >
+            {
+              "fields": {
+            		"device": {
+                  "en-US": "Sensor de Temperatura"
+                },
+                "devices": {
+                  "en-US": [
+                    {
+                      "sys": {
+                        "type": "Link",
+                        "linkType": "Entry",
+                        "id": "2wXY3DWoYE75tqacDj5nAF"
+                      }
+                    }
+                  ]
+                },
+                "dataManutencao": {
+                  "en-US": "2025-06-02T15:00:00Z"
+                },
+                "descricao": {
+                  "en-US": {
+                    "data": {},
+                    "content": [
+                      {
+                        "data": {},
+                        "content": [
+                          {
+                            "data": {},
+                            "marks": [],
+                            "value": "Substituição da fonte e revisão dos cabos internos.",
+                            "nodeType": "text"
+                          }
+                        ],
+                        "nodeType": "paragraph"
+                      }
+                    ],
+                    "nodeType": "document"
+                  }
+                }
+              }
+            }
+        headers:
+          - name: Content-Type
+            value: application/vnd.contentful.management.v1+json
+            id: pair_04c0ffde1bf9492eaf3a516b71022da1
+          - name: User-Agent
+            value: insomnia/11.0.0
+            id: pair_fd2fdd5742044452a1ed77ddac147502
+          - name: Authorization
+            value: Bearer ***REMOVIDO***
+            id: pair_8ba0ecf1cc2f4411a1e7b714aae146b6
+          - name: X-Contentful-Content-Type
+            value: maintenance
+            id: pair_b459ac015dbe4422ae2ee2951e6bedc4
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: iiot
+    meta:
+      id: fld_43d469d0154949d5b18bdf2b95e4a946
+      created: 1747696746756
+      modified: 1748903106286
+      sortKey: -1747696746756
+  - name: QUBITRO
+    meta:
+      id: fld_775f6300b87e47f6844afc5eb714d401
+      created: 1747953357548
+      modified: 1747953357548
+      sortKey: -1747953357548
+    children:
+      - url: https://api.qubitro.com/v2/projects/PROJETO_ID/devices/DEVICE_ID/data
+        name: GET DATA
+        meta:
+          id: req_f9475b4f3f9243098154c43656b79429
+          created: 1747953360705
+          modified: 1747956161306
+          isPrivate: false
+          sortKey: -1747953360705
+        method: GET
+        parameters:
+          - name: page
+            value: "1"
+            disabled: false
+            id: pair_acf659e00c3d4658ab78cbf4c32100e1
+          - name: limit
+            value: "10"
+            disabled: false
+            id: pair_11235e779d4d4a4c91924042c2839684
+          - name: range
+            value: all
+            disabled: false
+            id: pair_acccee3648ef43be87ab729465a90f5e
+        headers:
+          - name: User-Agent
+            value: insomnia/11.1.0
+          - name: Authorization
+            value: Bearer MEU_TOKEN
+          - name: Accept
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: QUBITRO
+    meta:
+      id: fld_97b272c58b944da89fa56c7bf52ced74
+      created: 1747953357548
+      modified: 1747953357548
+      sortKey: -1747953357548
+    children:
+      - url: https://api.qubitro.com/v2/projects/61423240-e511-4e83-a8b5-70fd8458503a/devices/92a9c650-9b11-49b5-9fdc-4c3a540bc0c9/data
+        name: GET DATA
+        meta:
+          id: req_ca13232288304dbf87c4c11b92efc989
+          created: 1747953360705
+          modified: 1748903374678
+          isPrivate: false
+          sortKey: -1747953360705
+        method: GET
+        parameters:
+          - name: page
+            value: "1"
+            disabled: false
+            id: pair_acf659e00c3d4658ab78cbf4c32100e1
+          - name: limit
+            value: "10"
+            disabled: false
+            id: pair_11235e779d4d4a4c91924042c2839684
+          - name: range
+            value: all
+            disabled: false
+            id: pair_acccee3648ef43be87ab729465a90f5e
+        headers:
+          - name: User-Agent
+            value: insomnia/11.1.0
+            id: pair_d6996296ea6c4e3d95dd473baf8bf382
+          - name: Authorization
+            value: Bearer
+              ***REMOVIDO***
+            id: pair_10c4b26caca94c709b38a640e3e7780e
+          - name: Accept
+            value: application/json
+            id: pair_bf50fc19c37b458980ba0afa75322758
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: SWAPI
+    meta:
+      id: ws-req_2b20f6d0a2a84570a8cc65b9de60ce8d
+      created: 1742519089268
+      modified: 1742519089268
+      sortKey: -1742519089268
+    settings:
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+  - name: SWAPI
+    meta:
+      id: ws-req_8ed0eef2f41344b4a9ff480bc9938fb0
+      created: 1742519089268
+      modified: 1742519089268
+      sortKey: -1742519089268
+    settings:
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+  - name: SWAPI
+    meta:
+      id: ws-req_bba1e32ff3c74e498f439cf426ba5d15
+      created: 1742519089268
+      modified: 1742519089268
+      sortKey: -1742519089268
+    settings:
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+  - name: CMS
+    meta:
+      id: ws-req_1db2964b43b140c3a95182524cbd027a
+      created: 1743723949410
+      modified: 1743723949410
+      sortKey: -1743723949410
+    settings:
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+  - name: CMS
+    meta:
+      id: ws-req_661118a65cbf470597309c62b58789fb
+      created: 1743723949410
+      modified: 1743723949410
+      sortKey: -1743723949410
+    settings:
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+  - name: CMS
+    meta:
+      id: ws-req_799526eae21d448f83abad8cb760eb8d
+      created: 1743723949410
+      modified: 1743723949410
+      sortKey: -1743723949410
+    settings:
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+  - name: CMS
+    meta:
+      id: ws-req_dbf75f28be2e468ab80119d0e114274f
+      created: 1743723949410
+      modified: 1743723949410
+      sortKey: -1743723949410
+    settings:
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1747696689826
+    modified: 1747696689826
+environments:
+  name: Base Environment
+  meta:
+    id: env_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1747696689732
+    modified: 1747696689732
+    isPrivate: false
