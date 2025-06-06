@@ -1,35 +1,17 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { fetchPlantData, PlantData } from '../services/api' // ajuste o caminho conforme sua estrutura
 
-const dados = ref([])
+const dados = ref<PlantData[]>([])
 const carregando = ref(true)
-const erro = ref(null)
-
-const page = 1
-const limit = 50
+const erro = ref<string | null>(null)
 
 onMounted(async () => {
   try {
-    const resposta = await axios.get(
-      'https://api.qubitro.com/v2/projects/61423240-e511-4e83-a8b5-70fd8458503a/devices/92a9c650-9b11-49b5-9fdc-4c3a540bc0c9/data',
-      {
-        headers: {
-          Authorization: 'Bearer ***REMOVIDO***',
-        },
-        params: {
-          limit,
-          page,
-          period: 'last7d'
-        },
-      }
-    )
-
-    console.log('Resposta recebida:', resposta.data)
-    dados.value = resposta.data.data
-  } catch (e) {
-    console.error('Erro detalhado:', e.response ?? e)
-    erro.value = `Erro ${e.response?.status || ''}: ` + (e.response?.data?.message || e.message)
+    dados.value = await fetchPlantData()
+  } catch (e: any) {
+    console.error('Erro detalhado:', e?.response ?? e)
+    erro.value = `Erro ${e?.response?.status || ''}: ` + (e?.response?.data?.message || e.message)
   } finally {
     carregando.value = false
   }
@@ -46,9 +28,11 @@ onMounted(async () => {
       <div v-for="(item, index) in dados" :key="index" class="sensor-item">
         <p><strong>Data/Hora:</strong> {{ new Date(item.time).toLocaleString() }}</p>
         <ul>
-          <li v-for="(valor, chave) in item" :key="chave" v-if="chave !== 'time'">
-            {{ chave }}: {{ valor }}
-          </li>
+          <li><strong>Plant 1</strong> - HUM: {{ item.plant_1_HUM }} | TEMP: {{ item.plant_1_TEMP }}</li>
+          <li><strong>Plant 2</strong> - HUM: {{ item.plant_2_HUM }} | TEMP: {{ item.plant_2_TEMP }}</li>
+          <li><strong>Plant 3</strong> - HUM: {{ item.plant_3_HUM }} | TEMP: {{ item.plant_3_TEMP }}</li>
+          <li><strong>Plant 4</strong> - HUM: {{ item.plant_4_HUM }} | TEMP: {{ item.plant_4_TEMP }}</li>
+          <li><strong>Tanque</strong> - PH: {{ item.tanque_PH }} | TEMP: {{ item.tanque_TEMP }}</li>
         </ul>
         <hr>
       </div>
