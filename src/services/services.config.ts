@@ -1,32 +1,39 @@
-import axios, {AxiosHeaders, type AxiosResponse} from "axios";
-export const BASE_URL = import.meta.env.VITE_CONTENTFUL_BASE_ENDPOINT;
+import axios, { AxiosHeaders } from "axios";
 
-export const getCdnAxios = (headers?: AxiosHeaders)=> {
+export const BASE_URL = '/spaces/tqsnwogyan0s/environments/master';
+
+export const getCdnAxios = (headers?: AxiosHeaders) => {
     const token = import.meta.env.VITE_CONTENTFUL_CDN_TOKEN;
-    return getAxios("cdn",token,headers);
-}
+    if (!token) throw new Error('Contentful CDN token is not defined');
+    return getAxios("cdn", token, headers);
+};
 
-export const getApiAxios = (headers?: AxiosHeaders)=> {
+export const getApiAxios = (headers?: AxiosHeaders) => {
     const token = import.meta.env.VITE_CONTENTFUL_API_TOKEN;
-    return getAxios("api",token,headers);
-}
+    if (!token) throw new Error('Contentful API token is not defined');
+    return getAxios("api", token, headers);
+};
 
-export const getAxios = (target:'cdn'|'api', token:String, 
-                         headers?: AxiosHeaders)=> {
-    if(!headers) headers = new AxiosHeaders();
-
-    headers.set('Authorization', `Bearer ${token}`);
-    headers.set('Content-Type', 'application/json');
-
-    const createdAxios = axios.create({
-        baseURL: `https://${target}${BASE_URL}`,
-        timeout: 4000,
-        headers: headers
+const getAxios = (target: 'cdn'|'api', token: string, headers?: AxiosHeaders) => {
+    const instance = axios.create({
+        baseURL: `https://${target}.contentful.com/spaces/tqsnwogyan0s/environments/master`,
+        timeout: 10000,
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': target === 'api' 
+                ? 'application/vnd.contentful.management.v1+json' 
+                : 'application/json',
+            ...headers?.toJSON()
+        }
     });
-    createdAxios.interceptors.response.use(getAxiosResponse);
-    return createdAxios;
-}
 
-const getAxiosResponse = (response:AxiosResponse)=> {
-    return response.data;
-}
+    instance.interceptors.response.use(
+        response => response.data,
+        error => {
+            console.error('API Error:', error);
+            return Promise.reject(error);
+        }
+    );
+
+    return instance;
+};

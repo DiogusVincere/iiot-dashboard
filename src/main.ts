@@ -12,3 +12,10 @@ app.use(createPinia())
 app.use(router)
 
 app.mount('#app')
+
+console.log('Variáveis de ambiente disponíveis:', {
+  ...import.meta.env,
+  // Esconde valores reais dos tokens por segurança
+  VITE_CONTENTFUL_CDN_TOKEN: import.meta.env.VITE_CONTENTFUL_CDN_TOKEN ? '***PRESENTE***' : 'FALTANDO',
+  VITE_CONTENTFUL_API_TOKEN: import.meta.env.VITE_CONTENTFUL_API_TOKEN ? '***PRESENTE***' : 'FALTANDO'
+});
