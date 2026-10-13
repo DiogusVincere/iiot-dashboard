@@ -1,86 +1,87 @@
 <script setup lang="ts">
-    import type { Device } from '../models/devices';
+/** Cartão de um equipamento cadastrado no Contentful (ou nos dados de demonstração). */
+import { computed } from 'vue'
+import type { Device } from '../models/device.model'
+import { iconeDoEquipamento } from './icones'
 
-    const props = withDefaults(defineProps<{
-        device: Device;
-        showButtons?: boolean;
-        index: number;
-    }>(), { showButtons: true });
+const props = defineProps<{ device: Device }>()
 
-    const emit = defineEmits(['deviceDeleteEvent']);
-
+const icone = computed(() => iconeDoEquipamento(props.device.fields.icon))
+const manutencoes = computed(() => props.device.fields.manutencao?.length ?? 0)
 </script>
 
 <template>
-    <section class="flex flex-column text-center align-items-center
-     justify-content-center border-round-sm">
-        <div @click="emit('deviceDeleteEvent',props.index)"
-         v-if="!props.showButtons" class="remove-container flex mt-2 justify-content-end align-items-center">
-            <span class="icons material-icons-round">delete</span>
-        </div>
-        <div>
-            <h5>{{ props.device.name }}</h5>
-            <span class="icons material-icons-round">{{ props.device.icon }}</span>
-            <div v-if="props.showButtons" :class="`device-buttons button-${props.device.state}`">
-                <button @click="()=>props.device.state = true" class="on">ON</button>
-                <button @click="()=>props.device.state = false" class="off">OFF</button>
-            </div> 
-        </div>     
-    </section>
+  <article class="cartao equipamento">
+    <div class="equipamento-icone" aria-hidden="true">
+      <span class="material-icons-round">{{ icone }}</span>
+    </div>
+    <div class="equipamento-corpo">
+      <h3>{{ device.fields.name }}</h3>
+      <div class="equipamento-meta">
+        <span class="chip" :class="{ 'chip-ok': device.fields.state }">
+          {{ device.fields.state ? 'Ligado' : 'Desligado' }}
+        </span>
+        <span class="pino num">GPIO {{ device.fields.pin }}</span>
+        <span v-if="manutencoes" class="pino">
+          {{ manutencoes }} {{ manutencoes === 1 ? 'manutenção' : 'manutenções' }}
+        </span>
+      </div>
+    </div>
+  </article>
 </template>
 
 <style scoped lang="scss">
-    section {
-        background-color: var(--background-device-color);
-        width: 10rem;
-        height: 7.5rem;
-        margin: 0.5rem;
-        
-        .icons{
-           font-size: 1.5rem;
-           margin: 0.5rem;
-           color: var(--device-icon-color);
-        }
+.equipamento {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px;
+  min-width: 0;
+  transition: border-color 0.15s, transform 0.15s;
 
-        .remove-container{
-            width: 100%;
-            height: 1rem;
-            span{
-                font-size: 1rem;
-                cursor: pointer;
-                &:hover{
-                    transform: scale(1.25);
-                    color: rgb(87, 18, 18);
-                }
-            }
-        }
+  &:hover {
+    border-color: var(--borda-forte);
+    transform: translateY(-1px);
+  }
+}
 
-        .device-buttons button{
-            border: none;
-            padding: 0.6rem;
-            cursor: pointer;
-            &:hover{
-                opacity: 0.6;
-                transform: scale(1.05);
-                transition: 0.5s;
-            }
-        }
-    }
+.equipamento-icone {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--chip);
+  border: 1px solid var(--borda);
+  color: var(--acento);
 
-.button-true{
-        .on{
-            background-color: green;
-        }
-        .off{
-            background-color: white;
-        }
-    }
-    .button-false{
-        .on{
-            background-color: white;
-        }
-        .off{
-            background-color: red;
-        }
-    }
+  .material-icons-round {
+    font-size: 24px;
+  }
+}
+
+.equipamento-corpo {
+  min-width: 0;
+
+  h3 {
+    font-size: 14.5px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    overflow-wrap: anywhere;
+  }
+}
+
+.equipamento-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.pino {
+  font-size: 13px;
+  color: var(--texto2);
+  white-space: nowrap;
+}
 </style>

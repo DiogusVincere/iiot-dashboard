@@ -1,291 +1,315 @@
-<template>
-  <div class="maintenance-register">
-    <h1>Registro de Manutenção</h1>
-    <p v-if="emDemo('Contentful')" class="demo-note">
-      Modo demonstração: os equipamentos são gravados e nada é enviado ao Contentful.
-    </p>
-    
-    <form @submit.prevent="handleSubmit">
-      <div class="form-group">
-        <label for="device">Equipamento:</label>
-        <select 
-          id="device" 
-          v-model="selectedDeviceId" 
-          @change="updateDeviceName"
-          required
-        >
-          <option value="" disabled>Selecione um equipamento</option>
-          <option 
-            v-for="device in devices" 
-            :key="device.sys.id" 
-            :value="device.sys.id"
-          >
-            {{ device.fields.name }}
-          </option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Nome do Equipamento (automático):</label>
-        <input 
-          type="text" 
-          :value="form.device" 
-          readonly
-          class="readonly-field"
-        >
-      </div>
-
-      <div class="form-group">
-        <label for="date">Data da Manutenção:</label>
-        <input 
-          type="datetime-local" 
-          id="date" 
-          v-model="form.dataManutencao" 
-          required
-        >
-      </div>
-
-      <div class="form-group">
-        <label for="description">Descrição do Serviço:</label>
-        <textarea 
-          id="description" 
-          v-model="form.descricao" 
-          rows="5" 
-          required
-        ></textarea>
-      </div>
-
-      <button type="submit" :disabled="isSubmitting">
-        {{ isSubmitting ? 'Registrando...' : 'Registrar Manutenção' }}
-      </button>
-    </form>
-
-    <div v-if="successMessage" class="success-message">
-      {{ successMessage }}
-    </div>
-
-    <div v-if="errorMessage" class="error-message">
-      {{ errorMessage }}
-    </div>
-
-    <!-- Em modo demonstração as manutenções ficam só aqui, na memória desta aba. -->
-    <section v-if="manutencoesDemo.length" class="demo-list">
-      <h2>Manutenções registradas nesta sessão (demonstração)</h2>
-      <ul>
-        <li v-for="manutencao in manutencoesDemo" :key="manutencao.sys.id">
-          <strong>{{ manutencao.fields.device['en-US'] }}</strong>
-          — {{ new Date(manutencao.fields.dataManutencao['en-US']).toLocaleString() }}
-          <p>{{ textoDaDescricao(manutencao) }}</p>
-        </li>
-      </ul>
-    </section>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { DeviceService } from '../services/device.service';
-import { MaintenanceService } from '../services/maintenance.service';
-import { emDemo, manutencoesDemo } from '../demo';
-import type { Device } from '../models/device.model';
-import type { Maintenance, MaintenanceFields } from '../models/maintenance.model';
-import type { AxiosError } from 'axios';
+import { computed, onMounted, ref } from 'vue'
+import { isAxiosError } from 'axios'
+import { DeviceService } from '../services/device.service'
+import { MaintenanceService } from '../services/maintenance.service'
+import { emDemo } from '../demo'
+import type { Device } from '../models/device.model'
+import type { Maintenance, MaintenanceFields } from '../models/maintenance.model'
+import { dataHora } from '../components/formato'
+import DeviceComponent from '../components/DeviceComponent.vue'
+import AddNewDeviceComponent from '../components/AddNewDeviceComponent.vue'
 
-const devices = ref<Device[]>([]);
-const selectedDeviceId = ref('');
-const isSubmitting = ref(false);
-const successMessage = ref('');
-const errorMessage = ref('');
+const devices = ref<Device[]>([])
+const carregando = ref(true)
+const erroCarga = ref('')
 
-const form = ref<MaintenanceFields>({
-  device: '', // Será preenchido automaticamente
-  devices: [], // Será preenchido automaticamente
-  dataManutencao: new Date().toISOString().slice(0, 16),
-  descricao: ''
-});
+const enviando = ref(false)
+const sucesso = ref('')
+const erroEnvio = ref('')
 
-// Carrega a lista de dispositivos
-onMounted(async () => {
+/** Manutenções registradas nesta aba, da mais nova para a mais antiga. */
+const registradas = ref<Maintenance[]>([])
+
+const formulario = ref<InstanceType<typeof AddNewDeviceComponent> | null>(null)
+
+const demo = computed(() => emDemo('Contentful'))
+const ligados = computed(() => devices.value.filter(d => d.fields.state).length)
+
+async function carregarEquipamentos() {
+  carregando.value = true
+  erroCarga.value = ''
   try {
-    devices.value = await DeviceService.getAll();
-    console.log('Dispositivos carregados:', devices.value);
+    devices.value = await DeviceService.getAll()
   } catch (err) {
-    errorMessage.value = 'Falha ao carregar dispositivos. Verifique o console para mais detalhes.';
-    console.error('Erro detalhado:', err);
-    
-    if ((err as AxiosError)?.response?.status === 401) {
-      console.error('Problema de autenticação. Verifique:');
-      console.error('1. Se o token no .env está correto');
-      console.error('2. Se as permissões do token estão corretas no Contentful');
+    erroCarga.value = 'Falha ao carregar os equipamentos. Veja o console para mais detalhes.'
+    console.error('Erro detalhado:', err)
+    if (isAxiosError(err) && err.response?.status === 401) {
+      console.error('Problema de autenticação. Verifique:')
+      console.error('1. Se o token no .env está correto')
+      console.error('2. Se as permissões do token estão corretas no Contentful')
     }
+  } finally {
+    carregando.value = false
   }
-});
+}
 
-// Atualiza o nome do dispositivo quando selecionado
-const updateDeviceName = () => {
-  console.log('Dispositivo selecionado:', selectedDeviceId.value);
-  const selectedDevice = devices.value.find(d => d.sys.id === selectedDeviceId.value);
-  if (selectedDevice) {
-    form.value.device = selectedDevice.fields.name;
-    form.value.devices = [selectedDevice.sys.id];
-    console.log('Nome atribuído:', form.value.device);
-  } else {
-    console.warn('Dispositivo não encontrado');
+onMounted(carregarEquipamentos)
+
+async function registrar(campos: MaintenanceFields) {
+  enviando.value = true
+  sucesso.value = ''
+  erroEnvio.value = ''
+  try {
+    const criada = await MaintenanceService.create(campos)
+    registradas.value = [criada, ...registradas.value]
+    sucesso.value = demo.value
+      ? 'Manutenção registrada na linha do tempo. Modo demonstração: nada foi enviado.'
+      : 'Manutenção registrada com sucesso!'
+    formulario.value?.limpar()
+  } catch (error) {
+    erroEnvio.value = 'Erro ao registrar manutenção.'
+    console.error('Erro no envio:', error)
+  } finally {
+    enviando.value = false
   }
-};
+}
 
 // Texto puro do campo rico `descricao` (um ou mais parágrafos).
 const textoDaDescricao = (manutencao: Maintenance) =>
   manutencao.fields.descricao['en-US'].content
     .flatMap(paragrafo => paragrafo.content.map(trecho => trecho.value))
-    .join(' ');
-
-const handleSubmit = async () => {
-  isSubmitting.value = true;
-  successMessage.value = '';
-  errorMessage.value = '';
-
-  try {
-    if (!selectedDeviceId.value) {
-      throw new Error('Selecione um equipamento');
-    }
-
-    await MaintenanceService.create(form.value);
-
-    successMessage.value = emDemo('Contentful')
-      ? 'Modo demonstração: nada é enviado. A manutenção ficou só na lista abaixo, na memória desta aba.'
-      : 'Manutenção registrada com sucesso!';
-    // Reseta o formulário
-    selectedDeviceId.value = '';
-    form.value = {
-      device: '',
-      devices: [],
-      dataManutencao: new Date().toISOString().slice(0, 16),
-      descricao: ''
-    };
-  } catch (error) {
-    errorMessage.value = 'Erro ao registrar manutenção';
-    console.error('Erro no envio:', error);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
+    .join(' ')
 </script>
 
-<style scoped>
-.maintenance-register {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  color: #333;
-  background-color: #fff;
-}
+<template>
+  <div class="container pagina">
+    <header class="cabecalho-pagina">
+      <div>
+        <h1 class="titulo-pagina">Manutenção</h1>
+        <p class="lead">
+          Equipamentos cadastrados e o registro das manutenções feitas neles. Cada registro vira uma
+          entrada no Contentful ligada ao equipamento.
+        </p>
+      </div>
+      <span v-if="devices.length" class="chip">{{ ligados }} de {{ devices.length }} ligados</span>
+    </header>
 
-.form-group {
+    <section class="bloco" aria-labelledby="titulo-equipamentos">
+      <h2 id="titulo-equipamentos" class="titulo-secao">Equipamentos</h2>
+
+      <div v-if="carregando" class="grade-equipamentos" aria-busy="true" aria-label="Carregando equipamentos">
+        <div v-for="n in 6" :key="n" class="cartao esqueleto-equipamento">
+          <div class="esqueleto quadrado"></div>
+          <div class="esqueleto-linhas">
+            <div class="esqueleto linha"></div>
+            <div class="esqueleto linha curta"></div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="erroCarga" class="cartao estado-vazio" role="alert">
+        <span class="material-icons-round" aria-hidden="true">cloud_off</span>
+        <h2>Não foi possível carregar os equipamentos</h2>
+        <p class="lead">{{ erroCarga }}</p>
+        <button class="botao botao-principal" type="button" @click="carregarEquipamentos">Tentar de novo</button>
+      </div>
+
+      <div v-else-if="!devices.length" class="cartao estado-vazio">
+        <span class="material-icons-round" aria-hidden="true">memory</span>
+        <h2>Nenhum equipamento cadastrado</h2>
+        <p class="lead">Cadastre entradas do tipo <code>device</code> no Contentful para vê-las aqui.</p>
+      </div>
+
+      <div v-else class="grade-equipamentos">
+        <DeviceComponent v-for="device in devices" :key="device.sys.id" :device="device" />
+      </div>
+    </section>
+
+    <div class="colunas">
+      <section class="cartao painel" aria-labelledby="titulo-nova">
+        <header class="cartao-topo">
+          <h2 id="titulo-nova">Nova manutenção</h2>
+        </header>
+        <AddNewDeviceComponent ref="formulario" :devices="devices" :enviando="enviando" :demo="demo" @registrar="registrar" />
+        <p v-if="sucesso" class="mensagem mensagem-ok" role="status">
+          <span class="material-icons-round" aria-hidden="true">check_circle</span>{{ sucesso }}
+        </p>
+        <p v-if="erroEnvio" class="mensagem mensagem-erro" role="alert">
+          <span class="material-icons-round" aria-hidden="true">error_outline</span>{{ erroEnvio }}
+        </p>
+      </section>
+
+      <section class="cartao painel" aria-labelledby="titulo-registradas">
+        <header class="cartao-topo">
+          <h2 id="titulo-registradas">Registradas nesta sessão</h2>
+          <span class="chip">{{ registradas.length }}</span>
+        </header>
+
+        <p v-if="!registradas.length" class="lead vazio">
+          Nenhuma manutenção registrada ainda. As que você registrar aparecem aqui, da mais recente
+          para a mais antiga<template v-if="demo">, e somem ao recarregar a página</template>.
+        </p>
+
+        <ol v-else class="linha-tempo">
+          <li v-for="manutencao in registradas" :key="manutencao.sys.id">
+            <span class="marcador" aria-hidden="true"></span>
+            <time class="quando num" :datetime="manutencao.fields.dataManutencao['en-US']">
+              {{ dataHora(manutencao.fields.dataManutencao['en-US']) }}
+            </time>
+            <h3 class="quem">{{ manutencao.fields.device['en-US'] }}</h3>
+            <p class="oque">{{ textoDaDescricao(manutencao) }}</p>
+          </li>
+        </ol>
+      </section>
+    </div>
+  </div>
+</template>
+
+<style scoped lang="scss">
+.bloco {
   margin-bottom: 20px;
 }
 
-label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #333;
-  background-color: #fff;
+.titulo-secao {
+  font-size: 17px;
+  margin-bottom: 12px;
 }
 
-input[type="text"],
-input[type="datetime-local"],
-select,
-textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-  color: #333;
-  background-color: #fff;
+.grade-equipamentos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: 14px;
 }
 
-/* ✅ Corrigido usando :deep para aplicar estilo às options */
-:deep(select option) {
-  color: #333;
-  background-color: #fff;
+.esqueleto-equipamento {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+
+  .quadrado {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .esqueleto-linhas {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 4px;
+  }
+
+  .linha {
+    height: 12px;
+    width: 70%;
+  }
+
+  .curta {
+    width: 40%;
+  }
 }
 
-.readonly-field {
-  background-color: #f5f5f5;
-  cursor: not-allowed;
-  color: #333;
+.colunas {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 16px;
+  align-items: start;
 }
 
-textarea {
-  min-height: 120px;
+.painel {
+  padding: 18px;
 }
 
-button {
-  background-color: #42b983;
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
+.mensagem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: var(--raio-medio);
+  font-size: 13px;
+
+  .material-icons-round {
+    font-size: 18px;
+    flex: none;
+  }
 }
 
-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
+.mensagem-ok {
+  color: var(--ok);
+  background: rgba(158, 206, 106, 0.1);
+  border: 1px solid rgba(158, 206, 106, 0.3);
 }
 
-.success-message {
-  color: green;
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #f0fff0;
-  border-radius: 4px;
+.mensagem-erro {
+  color: var(--alerta);
+  background: rgba(247, 118, 142, 0.1);
+  border: 1px solid rgba(247, 118, 142, 0.3);
 }
 
-.error-message {
-  color: red;
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #fff0f0;
-  border-radius: 4px;
+.vazio {
+  margin: 0;
 }
 
-.demo-note {
-  margin: 0 0 20px;
-  padding: 8px 10px;
-  font-size: 14px;
-  color: #4a3200;
-  background-color: #fff6d6;
-  border-left: 4px solid #e6c766;
-  border-radius: 4px;
+code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--chip);
+  font-size: 13px;
 }
 
-.demo-list {
-  margin-top: 30px;
-}
-
-.demo-list h2 {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-.demo-list ul {
+// Linha do tempo simples: traço à esquerda e um marcador por registro.
+.linha-tempo {
   list-style: none;
-  padding: 0;
+  position: relative;
+  padding-left: 22px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 5px;
+    width: 2px;
+    background: var(--borda);
+  }
+
+  li {
+    position: relative;
+    padding-bottom: 18px;
+
+    &:last-child {
+      padding-bottom: 0;
+    }
+  }
 }
 
-.demo-list li {
-  padding: 10px;
-  margin-bottom: 8px;
-  background-color: #f7f7f7;
-  border-radius: 4px;
+.marcador {
+  position: absolute;
+  top: 5px;
+  left: -22px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--acento);
+  box-shadow: 0 0 0 3px var(--card);
 }
 
-.demo-list li p {
-  margin: 6px 0 0;
+.quando {
+  display: block;
+  font-size: 12px;
+  color: var(--texto2);
+}
+
+.quem {
+  font-size: 14.5px;
+  font-weight: 600;
+  margin: 2px 0 4px;
+}
+
+.oque {
+  font-size: 13px;
+  color: var(--texto2);
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 820px) {
+  .colunas {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>
