@@ -12,7 +12,9 @@
     "noUncheckedSideEffectImports": true,
 
     /* Adicione esta linha abaixo */
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    /* src/demo importa os JSON de demonstração */
+    "resolveJsonModule": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
 }

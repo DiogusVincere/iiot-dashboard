@@ -1,0 +1,58 @@
+# Publica a demonstração do painel no GitHub Pages:
+# https://diogusvincere.github.io/iiot-dashboard/
+#
+# O build roda com VITE_DEMO=true: os serviços usam os dados gravados em src/demo
+# e nenhum token entra no JavaScript publicado. BASE_PATH ajusta o caminho base
+# do Vite para o subdiretório do repositório (ver vite.config.ts).
+#
+# A publicação só funciona depois de ligar o Pages no repositório
+# (Settings > Pages > Build and deployment > Source: GitHub Actions). Até lá o
+# job "build" passa e o "deploy" falha.
+name: Publicar demonstração (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build com dados de demonstração
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_DEMO: 'true'
+          BASE_PATH: /iiot-dashboard/
+      # O Pages não conhece as rotas do Vue Router; servir o index também como
+      # 404 faz /iiot-dashboard/manutencao abrir direto pela URL.
+      - run: cp dist/index.html dist/404.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Publicar no GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

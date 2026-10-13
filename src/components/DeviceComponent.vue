@@ -1,11 +1,11 @@
 <script setup lang="ts">
-   import { Device } from '@/models/devices';
-    
-    const props = defineProps({
-        device: { type: Device, required: true },
-        showButtons: { type: Boolean, default: true },
-        index: { type: Number, required: true }
-    });
+    import type { Device } from '../models/devices';
+
+    const props = withDefaults(defineProps<{
+        device: Device;
+        showButtons?: boolean;
+        index: number;
+    }>(), { showButtons: true });
 
     const emit = defineEmits(['deviceDeleteEvent']);
 

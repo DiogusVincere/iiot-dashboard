@@ -1,27 +1,27 @@
 import type { ContentfulEntry } from '../api/types';
 
+/** Ligação para outra entrada, no formato do Contentful. */
+export interface EntryLink {
+  sys: {
+    type: 'Link';
+    linkType: 'Entry';
+    id: string;
+  };
+}
+
+/**
+ * Campos de um equipamento como a CDN do Contentful os devolve quando se pede
+ * um `locale` fixo (é o caso de DeviceService.getAll): valores diretos, sem a
+ * chave do idioma. Os dados de demonstração (src/demo) seguem o mesmo formato.
+ */
 export interface DeviceFields {
   name: string;
   icon: string;
   state: boolean;
   pin: number;
-  manutencao?: string[]; // IDs das manutenções
+  manutencao?: EntryLink[]; // ligações para as manutenções
 }
 
 export interface Device extends ContentfulEntry {
-  fields: {
-    name: { 'en-US': string };
-    icon: { 'en-US': string };
-    state: { 'en-US': boolean };
-    pin: { 'en-US': number };
-    manutencao?: {
-      'en-US': Array<{
-        sys: {
-          type: 'Link';
-          linkType: 'Entry';
-          id: string;
-        };
-      }>;
-    };
-  };
+  fields: DeviceFields;
 }

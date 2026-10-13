@@ -1,0 +1,128 @@
+[
+  {
+    "sys": {
+      "id": "rTLB1mCTxaZx7AnPdB4zat",
+      "type": "Entry",
+      "createdAt": "2025-05-22T14:10:00.000Z",
+      "updatedAt": "2025-06-02T09:30:00.000Z",
+      "contentType": {
+        "sys": {
+          "type": "Link",
+          "linkType": "ContentType",
+          "id": "device"
+        }
+      }
+    },
+    "fields": {
+      "name": "Bomba do tanque",
+      "icon": "water_drop",
+      "state": true,
+      "pin": 4
+    }
+  },
+  {
+    "sys": {
+      "id": "pP7P6Pqp0fc3gMPaxhWn5g",
+      "type": "Entry",
+      "createdAt": "2025-05-22T14:10:00.000Z",
+      "updatedAt": "2025-06-02T09:30:00.000Z",
+      "contentType": {
+        "sys": {
+          "type": "Link",
+          "linkType": "ContentType",
+          "id": "device"
+        }
+      }
+    },
+    "fields": {
+      "name": "Válvula de irrigação — plantas 1 e 2",
+      "icon": "water",
+      "state": true,
+      "pin": 16
+    }
+  },
+  {
+    "sys": {
+      "id": "aXW2dJREPJz7VszG2mZUZI",
+      "type": "Entry",
+      "createdAt": "2025-05-22T14:10:00.000Z",
+      "updatedAt": "2025-06-02T09:30:00.000Z",
+      "contentType": {
+        "sys": {
+          "type": "Link",
+          "linkType": "ContentType",
+          "id": "device"
+        }
+      }
+    },
+    "fields": {
+      "name": "Válvula de irrigação — plantas 3 e 4",
+      "icon": "water",
+      "state": false,
+      "pin": 17
+    }
+  },
+  {
+    "sys": {
+      "id": "tRYwEX2ZXVSZcFFu3i5aF4",
+      "type": "Entry",
+      "createdAt": "2025-05-22T14:10:00.000Z",
+      "updatedAt": "2025-06-02T09:30:00.000Z",
+      "contentType": {
+        "sys": {
+          "type": "Link",
+          "linkType": "ContentType",
+          "id": "device"
+        }
+      }
+    },
+    "fields": {
+      "name": "Ventilador da estufa",
+      "icon": "air",
+      "state": true,
+      "pin": 18
+    }
+  },
+  {
+    "sys": {
+      "id": "hd0iDF2uXg4UIKyazExByf",
+      "type": "Entry",
+      "createdAt": "2025-05-22T14:10:00.000Z",
+      "updatedAt": "2025-06-02T09:30:00.000Z",
+      "contentType": {
+        "sys": {
+          "type": "Link",
+          "linkType": "ContentType",
+          "id": "device"
+        }
+      }
+    },
+    "fields": {
+      "name": "Aquecedor do tanque",
+      "icon": "thermostat",
+      "state": false,
+      "pin": 19
+    }
+  },
+  {
+    "sys": {
+      "id": "vQ3ymeypt5f20qoz5sHDba",
+      "type": "Entry",
+      "createdAt": "2025-05-22T14:10:00.000Z",
+      "updatedAt": "2025-06-02T09:30:00.000Z",
+      "contentType": {
+        "sys": {
+          "type": "Link",
+          "linkType": "ContentType",
+          "id": "device"
+        }
+      }
+    },
+    "fields": {
+      "name": "Iluminação de cultivo",
+      "icon": "lightbulb",
+      "state": true,
+      "pin": 21
+    }
+  }
+]

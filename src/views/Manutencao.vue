@@ -1,6 +1,9 @@
 <template>
   <div class="maintenance-register">
     <h1>Registro de Manutenção</h1>
+    <p v-if="emDemo('Contentful')" class="demo-note">
+      Modo demonstração: os equipamentos são gravados e nada é enviado ao Contentful.
+    </p>
     
     <form @submit.prevent="handleSubmit">
       <div class="form-group">
@@ -64,6 +67,18 @@
     <div v-if="errorMessage" class="error-message">
       {{ errorMessage }}
     </div>
+
+    <!-- Em modo demonstração as manutenções ficam só aqui, na memória desta aba. -->
+    <section v-if="manutencoesDemo.length" class="demo-list">
+      <h2>Manutenções registradas nesta sessão (demonstração)</h2>
+      <ul>
+        <li v-for="manutencao in manutencoesDemo" :key="manutencao.sys.id">
+          <strong>{{ manutencao.fields.device['en-US'] }}</strong>
+          — {{ new Date(manutencao.fields.dataManutencao['en-US']).toLocaleString() }}
+          <p>{{ textoDaDescricao(manutencao) }}</p>
+        </li>
+      </ul>
+    </section>
   </div>
 </template>
 
@@ -71,8 +86,9 @@
 import { ref, onMounted } from 'vue';
 import { DeviceService } from '../services/device.service';
 import { MaintenanceService } from '../services/maintenance.service';
+import { emDemo, manutencoesDemo } from '../demo';
 import type { Device } from '../models/device.model';
-import type { MaintenanceFields } from '../models/maintenance.model';
+import type { Maintenance, MaintenanceFields } from '../models/maintenance.model';
 import type { AxiosError } from 'axios';
 
 const devices = ref<Device[]>([]);
@@ -118,6 +134,12 @@ const updateDeviceName = () => {
   }
 };
 
+// Texto puro do campo rico `descricao` (um ou mais parágrafos).
+const textoDaDescricao = (manutencao: Maintenance) =>
+  manutencao.fields.descricao['en-US'].content
+    .flatMap(paragrafo => paragrafo.content.map(trecho => trecho.value))
+    .join(' ');
+
 const handleSubmit = async () => {
   isSubmitting.value = true;
   successMessage.value = '';
@@ -130,7 +152,9 @@ const handleSubmit = async () => {
 
     await MaintenanceService.create(form.value);
 
-    successMessage.value = 'Manutenção registrada com sucesso!';
+    successMessage.value = emDemo('Contentful')
+      ? 'Modo demonstração: nada é enviado. A manutenção ficou só na lista abaixo, na memória desta aba.'
+      : 'Manutenção registrada com sucesso!';
     // Reseta o formulário
     selectedDeviceId.value = '';
     form.value = {
@@ -227,5 +251,41 @@ button:disabled {
   padding: 10px;
   background-color: #fff0f0;
   border-radius: 4px;
+}
+
+.demo-note {
+  margin: 0 0 20px;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: #4a3200;
+  background-color: #fff6d6;
+  border-left: 4px solid #e6c766;
+  border-radius: 4px;
+}
+
+.demo-list {
+  margin-top: 30px;
+}
+
+.demo-list h2 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.demo-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.demo-list li {
+  padding: 10px;
+  margin-bottom: 8px;
+  background-color: #f7f7f7;
+  border-radius: 4px;
+}
+
+.demo-list li p {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
 }
 </style>

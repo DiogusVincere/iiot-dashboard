@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { fetchPlantData, PlantData } from '../services/api'
+import { fetchPlantData, type PlantData } from '../services/api'
 import {
   Chart as ChartJS,
   Title,
@@ -9,7 +9,9 @@ import {
   LineElement,
   PointElement,
   LinearScale,
-  CategoryScale
+  CategoryScale,
+  type ChartData,
+  type ChartOptions
 } from 'chart.js'
 import { Line } from 'vue-chartjs'
 
@@ -30,13 +32,18 @@ onMounted(async () => {
   }
 })
 
-function createChartData(plantNumber: number) {
+// Chaves numéricas de PlantData (tudo menos `time`), para montar `plant_N_HUM` com tipo.
+type ChavePlanta = Exclude<keyof PlantData, 'time'>
+
+function createChartData(plantNumber: number): ChartData<'line'> {
+  const chaveUmidade = `plant_${plantNumber}_HUM` as ChavePlanta
+  const chaveTemperatura = `plant_${plantNumber}_TEMP` as ChavePlanta
   return {
     labels: dados.value.map(d => new Date(d.time).toLocaleTimeString()),
     datasets: [
       {
         label: `Plant ${plantNumber} HUM`,
-        data: dados.value.map(d => d[`plant_${plantNumber}_HUM`]),
+        data: dados.value.map(d => d[chaveUmidade]),
         borderColor: '#81C784',              
         backgroundColor: 'rgba(129, 199, 132, 0.3)',  
         tension: 0.4,
@@ -44,7 +51,7 @@ function createChartData(plantNumber: number) {
       },
       {
         label: `Plant ${plantNumber} TEMP`,
-        data: dados.value.map(d => d[`plant_${plantNumber}_TEMP`]),
+        data: dados.value.map(d => d[chaveTemperatura]),
         borderColor: '#FF8A65',              
         backgroundColor: 'rgba(255, 138, 101, 0.3)', 
         tension: 0.4,
@@ -54,7 +61,7 @@ function createChartData(plantNumber: number) {
   }
 }
 
-const tanqueChartData = computed(() => ({
+const tanqueChartData = computed<ChartData<'line'>>(() => ({
   labels: dados.value.map(d => new Date(d.time).toLocaleTimeString()),
   datasets: [
     {
@@ -76,7 +83,7 @@ const tanqueChartData = computed(() => ({
   ]
 }))
 
-const chartOptions = (title: string) => ({
+const chartOptions = (title: string): ChartOptions<'line'> => ({
   responsive: true,
   plugins: {
     legend: { position: 'top' },

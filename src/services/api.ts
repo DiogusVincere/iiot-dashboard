@@ -1,9 +1,12 @@
 import axios from 'axios';
+import { leiturasDemo, usarDemo } from '../demo';
 
 // Token da API do Qubitro: defina VITE_QUBITRO_API_TOKEN no .env (ver .env.example).
+// Sem ele, ou com VITE_DEMO=true, os gráficos usam as leituras gravadas em src/demo.
 const qubitroToken = import.meta.env.VITE_QUBITRO_API_TOKEN;
-if (!qubitroToken) {
-  console.error('Variável VITE_QUBITRO_API_TOKEN não definida: os gráficos de sensores não vão carregar.');
+const demoQubitro = usarDemo('Qubitro', qubitroToken);
+if (demoQubitro) {
+  console.info('Qubitro em modo demonstração (VITE_DEMO=true ou VITE_QUBITRO_API_TOKEN ausente): leituras gravadas em src/demo.');
 }
 
 const api = axios.create({
@@ -92,6 +95,10 @@ const normalizePlantData = (rawData: RawApiData): PlantData => {
 };
  
 export const fetchPlantData = async (): Promise<PlantData[]> => {
+  if (demoQubitro) {
+    return leiturasDemo().map(normalizePlantData);
+  }
+
   const projectId = '61423240-e511-4e83-a8b5-70fd8458503a';
   const deviceId = '92a9c650-9b11-49b5-9fdc-4c3a540bc0c9';
  
