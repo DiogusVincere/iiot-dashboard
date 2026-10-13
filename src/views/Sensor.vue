@@ -1,224 +1,320 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { isAxiosError } from 'axios'
 import { fetchPlantData, type PlantData } from '../services/api'
-import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  type ChartData,
-  type ChartOptions
-} from 'chart.js'
-import { Line } from 'vue-chartjs'
-
-ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, LinearScale, CategoryScale)
+import { marcarAtualizacao } from '../components/atualizacao'
+import { CASAS, UNIDADE, estadoDe, type Grandeza, type Metrica } from '../components/faixas'
+import { CORES, rotulosDeTempo, type EixosY, type Serie } from '../components/graficos'
+import { hora } from '../components/formato'
+import KpiCard from '../components/KpiCard.vue'
+import SensorComponent from '../components/SensorComponent.vue'
+import TabelaLeituras from '../components/TabelaLeituras.vue'
 
 const dados = ref<PlantData[]>([])
 const carregando = ref(true)
 const erro = ref<string | null>(null)
 
-onMounted(async () => {
+function mensagemDeErro(e: unknown): string {
+  if (isAxiosError(e)) {
+    const status = e.response?.status
+    const corpo = e.response?.data as { message?: string } | undefined
+    const mensagem = corpo?.message ?? e.message
+    return status ? `Erro ${status}: ${mensagem}` : mensagem
+  }
+  if (e instanceof Error) return e.message
+  return 'Erro desconhecido'
+}
+
+async function carregar() {
+  carregando.value = true
+  erro.value = null
   try {
     dados.value = await fetchPlantData()
-  } catch (e: any) {
-    console.error('Erro detalhado:', e?.response ?? e)
-    erro.value = `Erro ${e?.response?.status || ''}: ` + (e?.response?.data?.message || e.message)
+    marcarAtualizacao()
+  } catch (e: unknown) {
+    console.error('Erro detalhado:', e)
+    erro.value = mensagemDeErro(e)
   } finally {
     carregando.value = false
   }
-})
+}
+
+onMounted(carregar)
+
+// ---------------------------------------------------------------------------
+// Derivados das leituras
+// ---------------------------------------------------------------------------
+
+const PLANTAS = [1, 2, 3, 4]
 
 // Chaves numéricas de PlantData (tudo menos `time`), para montar `plant_N_HUM` com tipo.
-type ChavePlanta = Exclude<keyof PlantData, 'time'>
+type ChaveNumerica = Exclude<keyof PlantData, 'time'>
 
-function createChartData(plantNumber: number): ChartData<'line'> {
-  const chaveUmidade = `plant_${plantNumber}_HUM` as ChavePlanta
-  const chaveTemperatura = `plant_${plantNumber}_TEMP` as ChavePlanta
+const chave = (planta: number, campo: 'HUM' | 'TEMP') => `plant_${planta}_${campo}` as ChaveNumerica
+const serie = (c: ChaveNumerica) => dados.value.map(d => d[c])
+
+const ultima = computed(() => (dados.value.length ? dados.value[dados.value.length - 1] : null))
+const anterior = computed(() => (dados.value.length > 1 ? dados.value[dados.value.length - 2] : null))
+
+const rotulos = computed(() => rotulosDeTempo(dados.value.map(d => d.time)))
+
+const periodo = computed(() => {
+  if (!dados.value.length) return ''
+  return `${hora(dados.value[0].time, false)} – ${hora(dados.value[dados.value.length - 1].time, false)}`
+})
+
+/** As 10 leituras mais recentes, da mais nova para a mais antiga. */
+const ultimas = computed(() => dados.value.slice(-10).reverse())
+
+function metrica(rotulo: string, grandeza: Grandeza, c: ChaveNumerica): Metrica {
+  const valor = ultima.value ? ultima.value[c] : null
   return {
-    labels: dados.value.map(d => new Date(d.time).toLocaleTimeString()),
-    datasets: [
-      {
-        label: `Plant ${plantNumber} HUM`,
-        data: dados.value.map(d => d[chaveUmidade]),
-        borderColor: '#81C784',              
-        backgroundColor: 'rgba(129, 199, 132, 0.3)',  
-        tension: 0.4,
-        fill: true
-      },
-      {
-        label: `Plant ${plantNumber} TEMP`,
-        data: dados.value.map(d => d[chaveTemperatura]),
-        borderColor: '#FF8A65',              
-        backgroundColor: 'rgba(255, 138, 101, 0.3)', 
-        tension: 0.4,
-        fill: true
-      }
-    ]
+    rotulo,
+    valor,
+    anterior: anterior.value ? anterior.value[c] : null,
+    unidade: UNIDADE[grandeza],
+    casas: CASAS[grandeza],
+    estado: valor === null ? null : estadoDe(grandeza, valor),
   }
 }
 
-const tanqueChartData = computed<ChartData<'line'>>(() => ({
-  labels: dados.value.map(d => new Date(d.time).toLocaleTimeString()),
-  datasets: [
-    {
-      label: 'Tanque PH',
-      data: dados.value.map(d => d.tanque_PH),
-      borderColor: '#64B5F6',               
-      backgroundColor: 'rgba(100, 181, 246, 0.3)',
-      tension: 0.4,
-      fill: true
-    },
-    {
-      label: 'Tanque TEMP',
-      data: dados.value.map(d => d.tanque_TEMP),
-      borderColor: '#FFB74D',               
-      backgroundColor: 'rgba(255, 183, 77, 0.3)',
-      tension: 0.4,
-      fill: true
-    }
-  ]
+const kpisPlantas = computed(() =>
+  PLANTAS.map(n => ({
+    titulo: `Planta ${n}`,
+    metricas: [
+      metrica('Umidade', 'umidade', chave(n, 'HUM')),
+      metrica('Temperatura', 'temperatura', chave(n, 'TEMP')),
+    ],
+  }))
+)
+
+const kpiTanque = computed(() => ({
+  titulo: 'Tanque',
+  metricas: [metrica('pH', 'ph', 'tanque_PH'), metrica('Temperatura', 'temperatura', 'tanque_TEMP')],
 }))
 
-const chartOptions = (title: string): ChartOptions<'line'> => ({
-  responsive: true,
-  plugins: {
-    legend: { position: 'top' },
-    title: {
-      display: true,
-      text: title,
-      font: { size: 18, weight: 'bold' }
-    }
-  }
-})
+const EIXOS_PLANTA: EixosY = {
+  esquerda: { unidade: '%', casas: 0 },
+  direita: { unidade: '°C', casas: 0 },
+}
+
+const EIXOS_TANQUE: EixosY = {
+  esquerda: { unidade: '', casas: 1 },
+  direita: { unidade: '°C', casas: 0 },
+}
+
+const graficosPlantas = computed(() =>
+  PLANTAS.map(n => {
+    const series: Serie[] = [
+      {
+        rotulo: 'Umidade',
+        dados: serie(chave(n, 'HUM')),
+        cor: CORES.umidade,
+        eixo: 'esquerda',
+        unidade: '%',
+        casas: 1,
+        preenchida: true,
+      },
+      {
+        rotulo: 'Temperatura',
+        dados: serie(chave(n, 'TEMP')),
+        cor: CORES.temperatura,
+        eixo: 'direita',
+        unidade: '°C',
+        casas: 1,
+      },
+    ]
+    return { titulo: `Planta ${n}`, series }
+  })
+)
+
+const seriesTanque = computed((): Serie[] => [
+  { rotulo: 'pH', dados: serie('tanque_PH'), cor: CORES.ph, eixo: 'esquerda', unidade: '', casas: 2 },
+  {
+    rotulo: 'Temperatura',
+    dados: serie('tanque_TEMP'),
+    cor: CORES.temperaturaTanque,
+    eixo: 'direita',
+    unidade: '°C',
+    casas: 1,
+  },
+])
 </script>
 
 <template>
-  <div class="dashboard-container">
-    <header class="dashboard-header">
-      <span class="material-icons icon">sensors</span>
-      <h2>Monitoramento - Qubitro</h2>
+  <div class="container pagina">
+    <header class="cabecalho-pagina">
+      <div>
+        <h1 class="titulo-pagina">Monitoramento</h1>
+        <p class="lead">
+          Umidade e temperatura das plantas 1 a 4 e pH e temperatura do tanque, nas últimas
+          {{ dados.length || 75 }} leituras.
+        </p>
+      </div>
+      <div class="acoes">
+        <span v-if="periodo" class="periodo num">{{ periodo }}</span>
+        <button class="botao" type="button" :disabled="carregando" @click="carregar">
+          <span class="material-icons-round" aria-hidden="true">refresh</span>
+          Atualizar
+        </button>
+      </div>
     </header>
 
-    <div v-if="carregando" class="loading">Carregando...</div>
-    <div v-else-if="erro" class="error">{{ erro }}</div>
-    <div v-else>
-      <section class="charts-grid">
-        <div class="chart-card" v-for="i in 4" :key="'plant-' + i">
-          <Line :data="createChartData(i)" :options="chartOptions(`Planta ${i} - Umidade e Temperatura`)" />
+    <!-- Carregando: esqueletos no lugar dos KPIs e dos gráficos. -->
+    <template v-if="carregando">
+      <section class="grade-kpi" aria-busy="true" aria-label="Carregando leituras">
+        <div v-for="n in 5" :key="n" class="cartao esqueleto-kpi">
+          <div class="esqueleto linha"></div>
+          <div class="esqueleto bloco"></div>
         </div>
-        <div class="chart-card">
-          <Line :data="tanqueChartData" :options="chartOptions('Tanque - PH e Temperatura')" />
+      </section>
+      <section class="grade-graficos" aria-hidden="true">
+        <div v-for="n in 5" :key="n" class="cartao esqueleto-grafico" :class="{ 'grafico-tanque': n === 5 }">
+          <div class="esqueleto linha"></div>
+          <div class="esqueleto area"></div>
         </div>
+      </section>
+    </template>
+
+    <section v-else-if="erro" class="cartao estado-vazio" role="alert">
+      <span class="material-icons-round" aria-hidden="true">cloud_off</span>
+      <h2>Não foi possível carregar as leituras</h2>
+      <p class="lead">{{ erro }}</p>
+      <button class="botao botao-principal" type="button" @click="carregar">Tentar de novo</button>
+    </section>
+
+    <section v-else-if="!dados.length" class="cartao estado-vazio">
+      <span class="material-icons-round" aria-hidden="true">sensors_off</span>
+      <h2>Nenhuma leitura disponível</h2>
+      <p class="lead">O dispositivo ainda não publicou dados ou a API não respondeu.</p>
+      <button class="botao" type="button" @click="carregar">Tentar de novo</button>
+    </section>
+
+    <template v-else>
+      <section class="grade-kpi" aria-label="Leituras atuais">
+        <KpiCard v-for="kpi in kpisPlantas" :key="kpi.titulo" :titulo="kpi.titulo" :metricas="kpi.metricas" />
+        <KpiCard :titulo="kpiTanque.titulo" :metricas="kpiTanque.metricas" />
       </section>
 
-      <section class="cards-grid">
-        <div v-for="(item, index) in dados.slice(-3).reverse()" :key="index" class="data-card">
-          <h4>{{ new Date(item.time).toLocaleString() }}</h4>
-          <ul>
-            <li><strong>Plant 1</strong>: HUM {{ item.plant_1_HUM }} | TEMP {{ item.plant_1_TEMP }}</li>
-            <li><strong>Plant 2</strong>: HUM {{ item.plant_2_HUM }} | TEMP {{ item.plant_2_TEMP }}</li>
-            <li><strong>Plant 3</strong>: HUM {{ item.plant_3_HUM }} | TEMP {{ item.plant_3_TEMP }}</li>
-            <li><strong>Plant 4</strong>: HUM {{ item.plant_4_HUM }} | TEMP {{ item.plant_4_TEMP }}</li>
-            <li><strong>Tanque</strong>: PH {{ item.tanque_PH }} | TEMP {{ item.tanque_TEMP }}</li>
-          </ul>
-        </div>
+      <section class="grade-graficos" aria-label="Gráficos">
+        <SensorComponent
+          v-for="grafico in graficosPlantas"
+          :key="grafico.titulo"
+          :titulo="grafico.titulo"
+          :series="grafico.series"
+          :eixos="EIXOS_PLANTA"
+          :rotulos="rotulos"
+        />
+        <SensorComponent
+          class="grafico-tanque"
+          titulo="Tanque"
+          :series="seriesTanque"
+          :eixos="EIXOS_TANQUE"
+          :rotulos="rotulos"
+        />
       </section>
-    </div>
+
+      <section class="cartao secao-tabela" aria-labelledby="titulo-tabela">
+        <header class="cartao-topo">
+          <h2 id="titulo-tabela">Últimas leituras</h2>
+          <span class="chip">{{ ultimas.length }} de {{ dados.length }}</span>
+        </header>
+        <TabelaLeituras :leituras="ultimas" />
+      </section>
+    </template>
   </div>
 </template>
 
 <style scoped lang="scss">
-.dashboard-container {
-  padding: 2rem;
-  background: linear-gradient(135deg, #121212, #1E1E1E); /* fundo escuro degradê */
-  border-radius: 1rem;
-  max-width: 1300px;
-  margin: 2rem auto;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #eee; /* texto claro */
-}
-
-.dashboard-header {
+.acoes {
   display: flex;
   align-items: center;
-  margin-bottom: 2rem;
-  color: #90CAF9; /* azul claro */
+  gap: 12px;
+}
 
-  .icon {
-    font-size: 2.5rem;
-    margin-right: 0.5rem;
-    color: #90CAF9;
+.periodo {
+  font-size: 13px;
+  color: var(--texto2);
+  white-space: nowrap;
+}
+
+.grade-kpi {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.grade-graficos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.grafico-tanque {
+  grid-column: 1 / -1;
+}
+
+.secao-tabela {
+  padding: 16px;
+}
+
+// Esqueletos
+.esqueleto-kpi {
+  padding: 16px;
+
+  .linha {
+    width: 40%;
+    height: 12px;
+    margin-bottom: 18px;
   }
 
-  h2 {
-    font-weight: 600;
-    font-size: 1.8rem;
+  .bloco {
+    height: 54px;
   }
 }
 
-.loading,
-.error {
-  font-size: 1.2rem;
-  color: #EF5350; /* vermelho claro para erros */
-  text-align: center;
-  margin-top: 4rem;
-}
+.esqueleto-grafico {
+  padding: 16px;
 
-.charts-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  .linha {
+    width: 30%;
+    height: 14px;
+    margin-bottom: 16px;
+  }
 
-  .chart-card {
-    background: #222;  /* fundo do card escuro */
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
-    border-radius: 12px;
-    padding: 1rem;
-    flex: 1 1 calc(33.333% - 1rem);
-    min-width: 280px;
+  .area {
+    height: 240px;
   }
 }
 
-.cards-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
+@media (max-width: 1080px) {
+  .grade-kpi {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
 
-  .data-card {
-    background: #222;  /* fundo escuro */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.9);
-    border-radius: 12px;
-    padding: 1.25rem 1.5rem;
-    flex: 1 1 calc(33.333% - 1rem);
-    min-width: 280px;
-    transition: transform 0.3s ease;
+@media (max-width: 820px) {
+  .grade-graficos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 
-    &:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 8px 24px rgba(144, 202, 249, 0.6);
-    }
+@media (max-width: 720px) {
+  .grade-kpi {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
-    h4 {
-      margin-bottom: 0.75rem;
-      color: #64B5F6; /* azul claro */
-      font-weight: 600;
-    }
+@media (max-width: 480px) {
+  .grade-kpi {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      font-size: 0.95rem;
-      color: #ccc; /* texto cinza claro */
-
-      li {
-        margin-bottom: 0.4rem;
-      }
-    }
+  .acoes {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 </style>
