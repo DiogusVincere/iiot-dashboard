@@ -6,10 +6,11 @@ Painel web em Vue 3 que mostra, em gráficos, as leituras dos sensores de uma pl
 
 Lidas de `src/views`, `src/services` e `firmware/`:
 
-- **Monitoramento (rota `/`)**: busca as últimas 75 leituras do dispositivo na API do Qubitro e desenha cinco gráficos de linha (Chart.js): umidade e temperatura das plantas 1 a 4 e pH e temperatura do tanque. Abaixo, cartões com as três leituras mais recentes. Aceita dois formatos de payload (`plant_X_HUM/TEMP` e `sensor_plantacao_X_HUM/PH`).
-- **Registro de manutenção (rota `/manutencao`)**: lista os equipamentos cadastrados no Contentful (entradas do tipo `device`), formulário com equipamento, data/hora e descrição; cria uma entrada `maintenance` pela Management API e já a publica.
-- **Modo demonstração**: com `VITE_DEMO=true`, ou quando falta o token de uma fonte, os serviços devolvem dados gravados em `src/demo/` (75 leituras e 6 equipamentos) e uma faixa no topo avisa "Dados de demonstração". Registrar manutenção só acrescenta a uma lista em memória e a tela diz que nada é enviado. É assim que a versão pública é publicada, sem nenhum token no JavaScript.
-- Botão no topo alterna entre as duas páginas; qualquer outra rota cai numa página 404.
+- **Monitoramento (rota `/`)**: busca as últimas 75 leituras do dispositivo na API do Qubitro. Em cima, um cartão de KPI por planta (1 a 4) e um do tanque, com os valores atuais, a variação em relação à leitura anterior e um chip Bom / Atenção / Alerta por faixa (umidade 40–70 %, temperatura 18–30 °C, pH 6,0–7,5; as faixas estão em `src/components/faixas.ts`). Depois, cinco gráficos de linha (Chart.js) com dois eixos Y — umidade e temperatura das plantas, pH e temperatura do tanque — e uma tabela com as dez últimas leituras. Aceita dois formatos de payload (`plant_X_HUM/TEMP` e `sensor_plantacao_X_HUM/PH`).
+- **Registro de manutenção (rota `/manutencao`)**: grade com os equipamentos cadastrados no Contentful (entradas do tipo `device`, com ícone, estado e pino), formulário com equipamento, data/hora e descrição, e uma linha do tempo com as manutenções registradas na sessão; cada registro cria uma entrada `maintenance` pela Management API e já a publica.
+- **Modo demonstração**: com `VITE_DEMO=true`, ou quando falta o token de uma fonte, os serviços devolvem dados gravados em `src/demo/` (75 leituras e 6 equipamentos) e o pill de status da barra superior fica âmbar, "Dados de demonstração" (verde, "Ao vivo", quando as fontes são reais). Registrar manutenção só acrescenta à linha do tempo em memória e a tela diz que nada é enviado. É assim que a versão pública é publicada, sem nenhum token no JavaScript.
+- Barra superior fixa com a navegação entre as duas páginas e a hora da última atualização; qualquer outra rota cai numa página 404.
+- Tema escuro com os mesmos tokens do portfólio (`src/assets/variables.scss`), fonte Inter, responsivo até 390 px.
 - **Firmware** (`firmware/`): sketches para ESP32 no Wokwi que leem um DHT22 e publicam temperatura e umidade por MQTT no broker do Qubitro a cada 5 segundos — é a origem dos dados do painel.
 
 ## De onde vêm os dados
@@ -29,7 +30,7 @@ Importante: em um app Vite, toda variável `VITE_*` vai parar no JavaScript entr
 
 **https://diogusvincere.github.io/iiot-dashboard/** — publicado pelo workflow `.github/workflows/pages.yml` a cada push na `main`; dados gravados, sem token. (A primeira publicação depende de ligar o Pages no repositório: Settings > Pages > Source: GitHub Actions.)
 
-O que dá para ver: os cinco gráficos com 75 leituras (as datas são deslocadas para terminar no instante em que a página abre), os cartões das três últimas leituras e, em "Página Manutenção", seis equipamentos para escolher e o formulário — ao registrar, a manutenção aparece numa lista abaixo e a tela avisa que nada foi enviado.
+O que dá para ver: os cartões de KPI, os cinco gráficos com 75 leituras (as datas são deslocadas para terminar no instante em que a página abre) e a tabela das últimas leituras; em "Manutenção", seis equipamentos em cartões e o formulário — ao registrar, a manutenção entra na linha do tempo ao lado e a tela avisa que nada foi enviado.
 
 Como funciona: `src/demo/index.ts` decide, por fonte, se usa os dados gravados (`VITE_DEMO=true` ou token ausente) e guarda em memória as manutenções registradas; `src/services/api.ts`, `device.service.ts` e `maintenance.service.ts` consultam essa decisão antes de falar com as APIs, e os clientes do Contentful só são carregados quando há tokens. Os JSON em `src/demo/` foram gerados por um script Python (senoides lentas com ruído, uma leitura a cada 5 s, no mesmo formato que as APIs devolvem); para trocar os dados basta editar os JSON mantendo as chaves. O build do Pages roda com `VITE_DEMO=true` e `BASE_PATH=/iiot-dashboard/` (caminho base do Vite, ver `vite.config.ts`).
 
@@ -48,8 +49,10 @@ npm run dev        # Windows PowerShell, forçando: $env:VITE_DEMO = "true"; npm
 src/api/            client.ts (axios para CDN e Management do Contentful), endpoints.ts, types.ts
 src/services/       api.ts (Qubitro), device.service.ts, maintenance.service.ts, services.config.ts
 src/demo/           index.ts (modo demonstração), leituras.json (75 leituras), equipamentos.json (6 equipamentos)
-src/views/          Sensor.vue (gráficos), Manutencao.vue (formulário), NotFound.vue
-src/components/     SensorComponent, DeviceComponent, AddNewDeviceComponent
+src/views/          Sensor.vue (monitoramento), Manutencao.vue (equipamentos e formulário), NotFound.vue
+src/components/     KpiCard, SensorComponent (cartão de gráfico), TabelaLeituras, EstadoChip,
+                    DeviceComponent (cartão de equipamento), AddNewDeviceComponent (formulário de manutenção);
+                    graficos.ts (opções do Chart.js), faixas.ts, formato.ts, icones.ts, atualizacao.ts
 src/models/         tipos de device, maintenance e resposta da API
 src/router/         rotas / e /manutencao
 src/stores/         repositório Pinia de dispositivos
@@ -73,7 +76,7 @@ Preencha o `.env`:
 
 - `VITE_CONTENTFUL_SPACE_ID`, `VITE_CONTENTFUL_ENVIRONMENT` (normalmente `master`), `VITE_CONTENTFUL_CDN_TOKEN` e `VITE_CONTENTFUL_API_TOKEN`: painel do Contentful, Settings > API keys (o token de Management é o "Personal access token").
 - `VITE_QUBITRO_API_TOKEN`: portal do Qubitro, API keys.
-- Deixe `VITE_DEMO` sem valor (ou fora do arquivo). Se algum token faltar, só aquela fonte cai nos dados gravados, e a faixa no topo diz qual.
+- Deixe `VITE_DEMO` sem valor (ou fora do arquivo). Se algum token faltar, só aquela fonte cai nos dados gravados, e o pill de status no topo diz qual (ao passar o mouse).
 - No firmware, troque `TOKEN_DO_DISPOSITIVO_QUBITRO` pela credencial do dispositivo mostrada no Qubitro antes de gravar no ESP32.
 
 ```bash

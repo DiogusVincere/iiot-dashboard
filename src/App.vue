@@ -41,9 +41,12 @@ const atualizado = computed(() => (ultimaAtualizacao.value ? hora(ultimaAtualiza
           :title="demo ? detalheDemo : 'Lendo as APIs do Qubitro e do Contentful'"
         >
           <span class="ponto-status" :class="{ pulsa: !demo }" aria-hidden="true"></span>
-          {{ demo ? 'Dados de demonstração' : 'Ao vivo' }}
+          <span class="so-largo">{{ demo ? 'Dados de demonstração' : 'Ao vivo' }}</span>
+          <span class="so-estreito">{{ demo ? 'Demonstração' : 'Ao vivo' }}</span>
         </span>
-        <span v-if="atualizado" class="atualizado num">Atualizado às {{ atualizado }}</span>
+        <span v-if="atualizado" class="atualizado num" :title="`Atualizado às ${atualizado}`">
+          <span class="so-largo">Atualizado às </span>{{ atualizado }}
+        </span>
       </div>
     </div>
   </header>
@@ -196,6 +199,10 @@ const atualizado = computed(() => (ultimaAtualizacao.value ? hora(ultimaAtualiza
   white-space: nowrap;
 }
 
+.so-estreito {
+  display: none;
+}
+
 .conteudo {
   flex: 1;
 }
@@ -222,33 +229,59 @@ const atualizado = computed(() => (ultimaAtualizacao.value ? hora(ultimaAtualiza
   gap: 8px 16px;
 }
 
+// Telas estreitas: marca e pill na primeira linha, navegação e hora na segunda.
 @media (max-width: 820px) {
   .topo-linha {
     grid-template-columns: 1fr auto;
-    gap: 8px 12px;
-    padding-bottom: 8px;
+    grid-template-areas:
+      'marca pill'
+      'nav hora';
+    gap: 6px 12px;
+    min-height: 0;
+    padding-top: 8px;
+    padding-bottom: 6px;
+  }
+
+  .marca {
+    grid-area: marca;
   }
 
   .navegacao {
-    grid-column: 1 / -1;
+    grid-area: nav;
     justify-content: flex-start;
     margin-left: -8px;
   }
 
   .status {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
+    display: contents;
+  }
+
+  .status .chip {
+    grid-area: pill;
+    justify-self: end;
   }
 
   .atualizado {
+    grid-area: hora;
+    align-self: center;
+    justify-self: end;
     font-size: 12px;
   }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 560px) {
   .marca-texto small {
     display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .so-largo {
+    display: none;
+  }
+
+  .so-estreito {
+    display: inline;
   }
 }
 </style>

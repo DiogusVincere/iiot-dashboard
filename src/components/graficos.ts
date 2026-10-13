@@ -15,6 +15,7 @@ import {
   type ChartDataset,
   type ChartOptions,
   type ScriptableContext,
+  type Tick,
   type TooltipItem,
 } from 'chart.js'
 import { hora, numero } from './formato'
@@ -75,12 +76,19 @@ export function rotulosDeTempo(tempos: string[], maximo = 8): RotulosTempo {
   const datas = tempos.map(t => new Date(t))
   const completos = datas.map(d => hora(d))
   const curtos = datas.map(d => hora(d, false))
-  const primeiros: number[] = []
-  curtos.forEach((rotulo, i) => {
-    if (i === 0 || rotulo !== curtos[i - 1]) primeiros.push(i)
-  })
-  const passo = Math.max(1, Math.ceil(primeiros.length / maximo))
-  const visiveis = new Set(primeiros.filter((_, i) => i % passo === 0))
+
+  // Índices em que o minuto muda.
+  const mudancas: number[] = []
+  for (let i = 1; i < curtos.length; i++) {
+    if (curtos[i] !== curtos[i - 1]) mudancas.push(i)
+  }
+  // A primeira leitura só ganha rótulo se o minuto seguinte não começa logo
+  // ao lado (senão "11:58" e "11:59" se sobrepõem). Meia fatia de eixo basta.
+  const meiaFatia = curtos.length / (maximo * 2)
+  const candidatos = mudancas.length === 0 || mudancas[0] >= meiaFatia ? [0, ...mudancas] : mudancas
+
+  const passo = Math.max(1, Math.ceil(candidatos.length / maximo))
+  const visiveis = new Set(candidatos.filter((_, i) => i % passo === 0))
   return { completos, curtos, visiveis }
 }
 
@@ -104,9 +112,20 @@ function gradiente(cor: string) {
   }
 }
 
-function comUnidade(valor: number, eixo: Eixo): string {
-  const texto = numero(valor, eixo.casas)
+function comUnidade(valor: number, eixo: Eixo, casas = eixo.casas): string {
+  const texto = numero(valor, casas)
   return eixo.unidade ? `${texto} ${eixo.unidade}` : texto
+}
+
+/**
+ * Casas decimais que o passo entre os ticks pede (passo 0,5 → 1 casa; 0,05 → 2),
+ * para o eixo não repetir "26 °C, 26 °C" numa faixa estreita.
+ */
+function casasDoPasso(ticks: Tick[], minimo: number): number {
+  if (ticks.length < 2) return minimo
+  const passo = Math.abs(ticks[1].value - ticks[0].value)
+  if (!(passo > 0)) return minimo
+  return Math.max(minimo, Math.min(3, Math.ceil(-Math.log10(passo) - 1e-9)))
 }
 
 export function dadosDoGrafico(rotulos: string[], series: Serie[]): ChartData<'line'> {
@@ -137,7 +156,8 @@ function escalaY(eixo: Eixo, posicao: 'left' | 'right', comGrade: boolean) {
     ticks: {
       maxTicksLimit: 6,
       padding: 6,
-      callback: (valor: number | string) => comUnidade(Number(valor), eixo),
+      callback: (valor: number | string, _indice: number, ticks: Tick[]) =>
+        comUnidade(Number(valor), eixo, casasDoPasso(ticks, eixo.casas)),
     },
   }
 }
