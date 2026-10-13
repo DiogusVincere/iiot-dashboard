@@ -11,7 +11,7 @@ const char* password = "";
 const char* mqtt_server = "broker.qubitro.com";
 const int mqtt_port = 1883;
 const char* mqtt_user = "92a9c650-9b11-49b5-9fdc-4c3a540bc0c9";
-const char* mqtt_password = "***REMOVIDO***";
+const char* mqtt_password = "TOKEN_DO_DISPOSITIVO_QUBITRO";  // credencial do dispositivo, copiada do painel do Qubitro
 const char* mqtt_topic = "92a9c650-9b11-49b5-9fdc-4c3a540bc0c9";
 const char* client_id = "92a9c650-9b11-49b5-9fdc-4c3a540bc0c9";
 

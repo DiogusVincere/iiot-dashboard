@@ -1,9 +1,15 @@
 import axios from 'axios';
 
+// Token da API do Qubitro: defina VITE_QUBITRO_API_TOKEN no .env (ver .env.example).
+const qubitroToken = import.meta.env.VITE_QUBITRO_API_TOKEN;
+if (!qubitroToken) {
+  console.error('Variável VITE_QUBITRO_API_TOKEN não definida: os gráficos de sensores não vão carregar.');
+}
+
 const api = axios.create({
   baseURL: 'https://api.qubitro.com/v2',
   headers: {
-    'Authorization': 'Bearer ***REMOVIDO***',
+    'Authorization': `Bearer ${qubitroToken ?? ''}`,
     'Accept': 'application/json'
   }
 });
