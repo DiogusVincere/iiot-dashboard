@@ -1,17 +1,23 @@
-:root{
-    --background-dark-color: #511f6e;
-    --background-light-color: #d3c1de;
-    --background-envs-color: rgb(206,160,160);
-    --background-device-color: rgb(212,221,218);
-    --device-icon-color: rgb(87,82,82);
+// Identidade visual: os mesmos tokens do portfólio (https://diogusvincere.github.io).
+// Tema escuro; as telas usam só as variáveis, nunca a cor direta.
+:root {
+  --fundo: #0f1117;
+  --fundo-brilho: #1a2238;
+  --card: #161a24;
+  --borda: #262c3a;
+  --borda-forte: #3a4356;
+  --texto: #e6edf3;
+  --texto2: #9aa4b2;
+  --acento: #7aa2f7;
+  --acento2: #4fd1c5;
+  --ok: #9ece6a;
+  --atencao: #e0af68;
+  --alerta: #f7768e;
+  --chip: #1d2331;
+  --sobre-acento: #0b0d12;
+
+  --raio: 16px;
+  --raio-medio: 10px;
+  --sombra: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --fonte: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
-
-// Tipografia
-$font-family-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-$font-size-base: 16px;
-
-// Espaçamento
-$border-radius: 12px;
-$padding-base: 1rem;
-$box-shadow-base: 0 4px 12px rgba(0, 0, 0, 0.06);
-$box-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.1);
